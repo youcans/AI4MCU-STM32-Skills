@@ -52,13 +52,15 @@ Thumbs.db
 nucleo-g431rb_basics/**
 !nucleo-g431rb_basics/**/
 !nucleo-g431rb_basics/**/*.ioc
-!nucleo-g431rb_basics/**/requirements.txt
+!nucleo-g431rb_basics/**/*.md
+!nucleo-g431rb_basics/**/*.txt
 
 # nucleo-c542rc_basics: only .ioc2 and requirements.txt
 nucleo-c542rc_basics/**
 !nucleo-c542rc_basics/**/
 !nucleo-c542rc_basics/**/*.ioc2
-!nucleo-c542rc_basics/**/requirements.txt
+!nucleo-c542rc_basics/**/*.md
+!nucleo-c542rc_basics/**/*.txt
 
 # nucleo-g431rb_basics_ref: 测试中，暂不提交
 nucleo-g431rb_basics_ref/
