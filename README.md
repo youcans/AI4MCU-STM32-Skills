@@ -39,7 +39,7 @@ AI4STM32 Skills
 ├── hardware/                   # Provides hardware documentation required for development
 ├── nucleo-g431rb_basics/        # Provides 15 basic experiment starter projects for NUCLEO-G431RB
 ├── nucleo-c542rc_basics/        # Currently provides 6 basic experiment starter projects for NUCLEO-C542RC
-└── nucleo-g431rb_basics_ref/    # Provides complete NUCLEO-G431RB reference projects developed with the Skill workflow
+└── nucleo-g431rb_completed/    # Provides complete NUCLEO-G431RB reference projects developed with the Skill workflow
 ```
 
 The `docs/` directory contains public project documentation for AI4STM32 Skills.
@@ -51,7 +51,7 @@ AI4MCU-STM32-Skills/
 ├── claude-user-skills/
 ├── nucleo-g431rb_basics/
 ├── nucleo-c542rc_basics/
-├── nucleo-g431rb_basics_ref/
+├── nucleo-g431rb_completed/
 ├── docs/
 ├── hardware/
 ├── .gitignore
@@ -67,7 +67,7 @@ The main directories are used as follows:
 - `hardware/` contains board hardware overviews, datasheets, schematics, user manuals, BOM files, and other hardware documentation;
 - `nucleo-g431rb_basics/` provides `.ioc` files and `requirements.txt` files for 15 NUCLEO-G431RB basic experiments, allowing users to run the AI4STM32 Skills workflow themselves;
 - `nucleo-c542rc_basics/` currently provides six basic experiment starter projects for NUCLEO-C542RC, with more experiments to be added;
-- `nucleo-g431rb_basics_ref/` provides complete NUCLEO-G431RB reference projects that have already gone through the full Skill development workflow. It currently contains seven complete projects;
+- `nucleo-g431rb_completed/` provides complete NUCLEO-G431RB reference projects that have already gone through the full Skill development workflow. It currently contains seven complete projects;
 - `docs/` contains public documentation for installation, usage, and Skill specifications.
 
 ---
@@ -328,9 +328,9 @@ nucleo-c542rc_basics/
 └── TIM1_PWM_Comp/      # TIM1 complementary PWM output experiment
 ```
 
-### `nucleo-g431rb_basics_ref/`
+### `nucleo-g431rb_completed/`
 
-The `nucleo-g431rb_basics_ref/` directory contains complete NUCLEO-G431RB reference projects that have already been developed and validated using the AI4STM32 Skills workflow.
+The `nucleo-g431rb_completed/` directory contains complete NUCLEO-G431RB reference projects that have already been developed and validated using the AI4STM32 Skills workflow.
 
 It currently provides seven complete reference projects. These projects demonstrate the complete results from user requirements and the STM32CubeMX initial project through project analysis, programming task planning, code implementation, and hardware validation.
 
@@ -356,7 +356,7 @@ A reference project may contain:
 
 The actual files and directories may vary depending on the experiment.
 
-`nucleo-g431rb_basics/` and `nucleo-c542rc_basics/` provide the “experiment starting point” for their respective development boards, allowing users to run the AI4STM32 Skills workflow themselves. `nucleo-g431rb_basics_ref/` provides the “complete reference result” for NUCLEO-G431RB, allowing users to review completed projects.
+`nucleo-g431rb_basics/` and `nucleo-c542rc_basics/` provide the “experiment starting point” for their respective development boards, allowing users to run the AI4STM32 Skills workflow themselves. `nucleo-g431rb_completed/` provides the “complete reference result” for NUCLEO-G431RB, allowing users to review completed projects.
 
 ---
 

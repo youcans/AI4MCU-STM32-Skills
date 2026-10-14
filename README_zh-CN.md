@@ -39,7 +39,7 @@ AI4STM32 Skills
 ├── hardware/                   # 提供开发所需硬件资料
 ├── nucleo-g431rb_basics/        # 提供NUCLEO-G431RB的15个基础实验起始项目
 ├── nucleo-c542rc_basics/        # 当前提供NUCLEO-C542RC的6个基础实验起始项目
-└── nucleo-g431rb_basics_ref/    # 提供NUCLEO-G431RB已完成Skill开发流程的完整参考项目
+└── nucleo-g431rb_completed/    # 提供NUCLEO-G431RB已完成Skill开发流程的完整参考项目
 ```
 
 仓库中的`docs/`目录用于保存AI4STM32 Skills公开项目文档。
@@ -51,7 +51,7 @@ AI4MCU-STM32-Skills/
 ├── claude-user-skills/
 ├── nucleo-g431rb_basics/
 ├── nucleo-c542rc_basics/
-├── nucleo-g431rb_basics_ref/
+├── nucleo-g431rb_completed/
 ├── docs/
 ├── hardware/
 ├── .gitignore
@@ -67,7 +67,7 @@ AI4MCU-STM32-Skills/
 - `hardware/`保存开发板硬件概述、数据手册、原理图、用户手册和BOM等资料；
 - `nucleo-g431rb_basics/`提供NUCLEO-G431RB的15个基础实验的`.ioc`文件和`requirements.txt`，用于用户自行运行AI4STM32 Skills开发流程；
 - `nucleo-c542rc_basics/`当前提供NUCLEO-C542RC的6个基础实验起始项目，后续继续增加实验；
-- `nucleo-g431rb_basics_ref/`提供NUCLEO-G431RB已经完成完整Skill开发流程的参考项目，目前包含7个完整项目；
+- `nucleo-g431rb_completed/`提供NUCLEO-G431RB已经完成完整Skill开发流程的参考项目，目前包含7个完整项目；
 - `docs/`保存AI4STM32 Skills安装、使用和Skill规范等公开项目文档。
 
 ---
@@ -325,9 +325,9 @@ nucleo-c542rc_basics/
 └── TIM1_PWM_Comp/      # TIM1互补PWM输出实验
 ```
 
-### `nucleo-g431rb_basics_ref/`
+### `nucleo-g431rb_completed/`
 
-`nucleo-g431rb_basics_ref/`保存面向NUCLEO-G431RB、已经按照AI4STM32 Skills项目的Skill体系完成开发和验证的完整参考项目。
+`nucleo-g431rb_completed/`保存面向NUCLEO-G431RB、已经按照AI4STM32 Skills项目的Skill体系完成开发和验证的完整参考项目。
 
 当前提供7个完整参考项目，用于展示从用户需求、STM32CubeMX初始工程、工程分析、编程任务规划到代码实现和实际硬件验证后的完整结果。
 
@@ -353,7 +353,7 @@ nucleo-c542rc_basics/
 
 具体文件和目录根据实验工程实际内容有所不同。
 
-`nucleo-g431rb_basics/`和`nucleo-c542rc_basics/`分别提供两种开发板的“实验起点”，用于用户自行运行AI4STM32 Skills开发流程；`nucleo-g431rb_basics_ref/`提供NUCLEO-G431RB的“完整参考”，用于查看已经完成开发后的参考结果。
+`nucleo-g431rb_basics/`和`nucleo-c542rc_basics/`分别提供两种开发板的“实验起点”，用于用户自行运行AI4STM32 Skills开发流程；`nucleo-g431rb_completed/`提供NUCLEO-G431RB的“完整参考”，用于查看已经完成开发后的参考结果。
 
 ---
 

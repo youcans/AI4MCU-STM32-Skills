@@ -62,8 +62,8 @@ nucleo-c542rc_basics/**
 !nucleo-c542rc_basics/**/*.md
 !nucleo-c542rc_basics/**/*.txt
 
-# nucleo-g431rb_basics_ref: 测试中，暂不提交
-nucleo-g431rb_basics_ref/
+# nucleo-g431rb_completed: 测试中，暂不提交
+nucleo-g431rb_completed/
 
-# nucleo-c542rc_basics_ref: 测试中，暂不提交
-nucleo-c542rc_basics_ref/
+# nucleo-c542rc_completed: 测试中，暂不提交
+nucleo-c542rc_completed/
