@@ -4,4 +4,4 @@
 
 [Experiment Name] GPIO External Interrupt Experiment
 [Functional Objective] Toggle the onboard LED (PA5) via an external interrupt triggered by pressing the user button (PC13), with a 20 ms debounce time.
-[Board and MCU] NUCLEO-C542RC development board, equipped with theSTM32C542RCT6 MCU.
+[Board and MCU] NUCLEO-C542RC development board, equipped with theSTM32C542RCT6 MCU./stm32-init

@@ -1,184 +1,152 @@
-# TIM_PWM_1kHz 定时器 PWM 输出实验(呼吸灯)
-
-> 面向嵌入式初学者的编程说明。读者应具备 STM32 基础、C 语言基础,并能用 STM32CubeMX2 + STM32CubeIDE 生成与烧录工程。
+# 定时器 PWM 输出实验
 
 ## 1. 项目概述
 
-本项目在 **NUCLEO-C542RC** 开发板(STM32C542RCT6)上,利用定时器 TIM6 输出频率约 **1 kHz** 的 PWM 信号,驱动板载 LED(LD1,引脚 **PA5**),并把 PWM 占空比在 **10% ~ 90%** 之间周期性往复变化,周期约 **2 s**,实现"呼吸灯"效果——LED 亮度由暗渐亮、再由亮渐暗,循环往复。
+本实验基于 NUCLEO-C542RC 开发板（MCU 为 STM32C542RCT6），使用定时器 **TIM2 通道1** 输出 PWM 信号来驱动板载用户 LED（PA5/LD1）。PWM 频率约为 1 kHz，占空比在 10%~90% 之间周期性往复变化（一个完整往复周期约为 2 s），从而让 LED 实现"呼吸灯"效果：由暗渐亮、再由亮渐暗，循环往复。
 
-整个工程由 **STM32CubeMX2** 生成,**HAL 驱动库** 完成底层初始化,本次任务只修改了用户文件 `main.c`。
+项目围绕两层功能增量展开：
+- **T01 启动 PWM 输出**：先让 LED 以固定占空比（约 50%）稳定点亮，验证 TIM2_CH1 的 PWM 输出链路正常。
+- **T02 呼吸灯效果**：在 PWM 正常输出的基础上，让占空比在 10%~90% 间平滑往复变化，实现呼吸灯。
 
 ## 2. 硬件说明
 
-| 硬件 | 说明 |
-| --- | --- |
-| 开发板 | NUCLEO-C542RC |
-| 主控芯片 | STM32C542RCT6(Cortex-M33 内核) |
-| 系统时钟 | 144 MHz(内部 PSIS 时钟) |
-| 板载 LED | LD1,引脚 **PA5**,高电平点亮(active high) |
-| 板载按键 | B1,引脚 PC13(与 LED 无关,本次未使用) |
-| 定时器 | TIM6(**基本定时器**),内部时钟 144 MHz |
+| 硬件项 | 说明 |
+|---|---|
+| 开发板 | NUCLEO-C542RC（Nucleo-64，板卡编号 MB2213） |
+| MCU | STM32C542RCT6（Cortex-M33，最大主频 144 MHz，LQFP64） |
+| 板载 LED | LD1，连接到 PA5 |
+| 输出通道 | TIM2 通道1（TIM2_CH1），复用映射到 PA5 |
 
-> 特别注意:**TIM6 是基本定时器(basic timer)**,它**没有硬件 PWM 输出通道**,不能像高级定时器 TIM1 那样把 PWM 直接接到引脚上。LED 引脚 PA5 在 CubeMX 中被配置为**普通 GPIO 推挽输出**。因此本实验的 PWM 是**软件 PWM**——由 TIM6 的更新中断周期性地翻转 PA5 电平,配合占空比控制来模拟 PWM 波形(详见第 5 节)。
+关键连接关系：
+
+- **PA5（LD1）**：在 STM32CubeMX2 中配置为 TIM2_CH1 的复用功能（复用号 AF1），代替普通 GPIO 输出。
+- **TIM2**：作为 PWM 输出定时器，内部时钟驱动，产生约 1 kHz 的 PWM 基频。
+
+> 提示：LED 亮度由占空比决定。占空比越高，单位时间内 LED 点亮的时间比例越大，人眼看起来越亮。
 
 ## 3. 功能需求
 
-1. TIM6 配置为定时**1 ms** 触发一次更新中断(即中断频率 1 kHz)。
-2. 用软件在 PA5 上产生占空比可调的 PWM,载波周期约 **20 ms**(刷新率约 50 Hz,肉眼无闪烁)。
-3. PWM 占空比在 **10% ~ 90%** 之间以三角波形式往复变化:
-   - 前半周期约 1 s,占空比从 10% 逐渐升到 90%(LED 渐亮);
-   - 后半周期约 1 s,占空比从 90% 逐渐降到 10%(LED 渐暗);
-   - 完整呼吸周期约 **2 s**。
-4. 示波器在 PA5 观测波形正常(脉冲宽度随时间呈三角波规律变化)。
+| 编号 | 需求 | 说明 |
+|---|---|---|
+| PR-001 | PWM 输出 | 使用 TIM2_CH1 输出 PWM，驱动 PA5 板载 LED，PWM 频率约为 1 kHz |
+| PR-002 | 呼吸灯效果 | 占空比在 10%~90% 之间周期性往复变化，变化周期约为 2 s |
 
 ## 4. 实现思路
 
-### 4.1 为什么用软件 PWM
+整个工程由 STM32CubeMX2 生成初始框架（时钟、GPIO、TIM2 等初始化代码），用户只需在 `main.c` 的 `main()` 函数中补充应用逻辑。
 
-由于 TIM6 是基本定时器、没有硬件 PWM 通道,而 PA5 又是 GPIO 输出,所以采用**软件 PWM**:
+**PWM 输出的关键步骤**（T01）：
+1. 通过 `mx_tim2_gethandle()` 获取 TIM2 的句柄。
+2. 设置 CH1 比较单元的占空比脉冲值（如 50%）。
+3. 启动 TIM2 计数器（使 PWM 时基运行）。
+4. 启动 TIM2_CH1 输出通道（把 PWM 信号真正送到 PA5）。
 
-- TIM6 每 1 ms 进入一次更新中断(`HAL_TIM_UpdateCallback`)。
-- 我们把连续 **20 个 1 ms 中断**组成一帧 PWM 载波(20 ms),每帧内：
-  - 前 `duty_ticks` 个中断让 PA5 = 高电平(LED 亮);
-  - 剩余 `20 - duty_ticks` 个中断让 PA5 = 低电平(LED 灭)。
-- `duty_ticks` 取值 $0..20$,对应占空比 $0\%..100\%$,分辨率 **5%**。本实验限制在 10%(`duty_ticks = 2`)~ 90%(`duty_ticks = 18`)。
-
-### 4.2 呼吸调制(三角波)
-
-用一个 `breath_ms` 计数器在 1 ms 中断里累加,周期 $T = 2000$ ms:
-
-- 前半段($0 \le breath\_ms < 1000$):占空比线性上升(10% → 90%);
-- 后半段($1000 \le breath\_ms < 2000$):占空比线性下降(90% → 10%)。
-
-即把 `breath_ms` 映射为一条三角形函数,再换算成 `duty_ticks`,LED 亮度随之循环明暗。
-
-### 4.3 关键结论
-
-```text
-TIM6 中断频率  = 144 MHz / (1439 + 1) / (99 + 1) = 144e6 / 1440 / 100 = 1000 Hz
-软件 PWM 载波  = 1000 Hz / 20 ≈ 50 Hz(帧长 20 ms)
-呼吸周期       = 2 s(占空比 10% ↔ 90% 三角波)
-```
+**呼吸灯的实现思路**（T02）：
+以 SysTick 产生的 HAL 毫秒时基（`HAL_GetTick()`）作为时间基准，在 `while(1)` 主循环中**非阻塞**地周期性更新占空比。占空比在 10%~90% 之间线性递增，到达 90% 后切换方向递减回 10%，如此往复；一个完整的"由暗到亮再到暗"周期约为 2 s（上半段约 1 s，下半段约 1 s）。
 
 ## 5. 关键代码
 
-工程为 STM32CubeMX2 生成的新式工程结构,初始化由 `mx_system_init()` 统一完成,用户只需在 `main.c` 中启动定时器中断并实现回调。
+以下代码位于 `main.c` 的 `main()` 函数中。系统初始化成功后，先启动 PWM，再进入呼吸灯循环。
 
-### 5.1 用户自定义参数
+**（1）启动 TIM2_CH1 PWM 输出**
 
 ```c
-/* Software-PWM 载波:由 TIM6 的 1 kHz 更新中断分帧构建。
-   一帧 SOFT_PWM_STEPS 个 1 ms 滴答 = 20 ms(刷新率约 50 Hz)。
-   每帧前 <duty_ticks> 个滴答 LED 亮,其余灭,即 5% 步进的占空比。 */
-#define SOFT_PWM_STEPS          20U   /* 20 x 1 ms = 20 ms 载波帧               */
-#define BREATH_PERIOD_MS        2000U /* 完整呼吸周期(10%->90%->10%)            */
-#define MIN_DUTY_TICKS          2U    /* 10% 占空比(20 格中的 2 格)             */
-#define MAX_DUTY_TICKS          18U   /* 90% 占空比(20 格中的 18 格)            */
+/* T01: 启动 TIM2_CH1 PWM 输出，固定占空比约 50% */
+hal_tim_handle_t *htim2 = mx_tim2_gethandle();
+
+/* 设置 CH1 占空比脉冲（初始值 50%，匹配 ARR=99） */
+(void)HAL_TIM_OC_SetCompareUnitPulse(htim2, HAL_TIM_OC_COMPARE_UNIT_1, TIM2_CH1_DUTY_PULSE);
+
+/* 启动 TIM2 计数器（HAL_TIM_OC_StartChannel 仅使能输出通道，不启动计数器） */
+(void)HAL_TIM_Start(htim2);
+
+/* 启动 TIM2_CH1 PWM 输出 */
+(void)HAL_TIM_OC_StartChannel(htim2, HAL_TIM_CHANNEL_1);
 ```
 
-### 5.2 更新中断回调(软件 PWM + 三角波呼吸)
+**（2）呼吸灯效果（占空比周期性往复）**
 
 ```c
-/**
-  * @brief TIM6 更新中断回调(覆写 HAL 的 __WEAK 弱函数)。
-  *        每 1 ms 调用一次。在 LD1(PA5)上输出软件 PWM,并按三角波
-  *        调制占空比(10% <-> 90%),周期 BREATH_PERIOD_MS,实现呼吸灯。
-  */
-void HAL_TIM_UpdateCallback(hal_tim_handle_t *htim)
+/* T02: 呼吸灯状态初始化 */
+uint32_t breath_cycle_start = HAL_GetTick();   /* 当前呼吸半周期起点时刻 */
+uint32_t breath_rising      = 1U;              /* 1=占空比递增，0=递减 */
+
+while (1)
 {
-  static uint16_t breath_ms   = 0U;   /* 呼吸周期内位置 0..BREATH_PERIOD_MS-1 */
-  static uint8_t  duty_ticks  = MIN_DUTY_TICKS;
-  static uint8_t  frame_tick  = 0U;   /* 一帧内 0..SOFT_PWM_STEPS-1            */
+  /* T02: 基于 SysTick 时基更新呼吸灯占空比（非阻塞，约2s往复） */
+  uint32_t now = HAL_GetTick();
+  uint32_t elapsed = now - breath_cycle_start;
 
-  /* 每 1 ms 前进一步,走完整个呼吸周期后回绕。 */
-  breath_ms++;
-  if (breath_ms >= BREATH_PERIOD_MS)
+  if (elapsed >= TIM2_BREATH_HALF_MS)
   {
-    breath_ms = 0U;
+    /* 越过半周期，切换方向并重置半周期起点 */
+    breath_rising = !breath_rising;
+    breath_cycle_start = now;
+    elapsed = 0U;
   }
 
-  /* 三角波:周期边缘回到 10%,半周期中点达到 90%。 */
-  uint16_t half = BREATH_PERIOD_MS / 2U;
-  uint16_t ph   = (breath_ms < half) ? breath_ms : (BREATH_PERIOD_MS - breath_ms);
-  duty_ticks    = MIN_DUTY_TICKS +
-                  ((uint32_t)(MAX_DUTY_TICKS - MIN_DUTY_TICKS) * ph) / half;
+  /* 在当前半周期内线性计算占空比脉冲值（10%~90%） */
+  uint32_t range = TIM2_DUTY_PULSE_MAX - TIM2_DUTY_PULSE_MIN;
+  uint32_t offset = (range * elapsed) / TIM2_BREATH_HALF_MS;
+  uint32_t pulse = breath_rising
+                   ? (TIM2_DUTY_PULSE_MIN + offset)   /* 递增：由暗渐亮 */
+                   : (TIM2_DUTY_PULSE_MAX - offset);  /* 递减：由亮渐暗 */
 
-  /* 分帧伺服软件 PWM 载波。 */
-  frame_tick++;
-  if (frame_tick >= SOFT_PWM_STEPS)
-  {
-    frame_tick = 0U;
-  }
-
-  HAL_GPIO_WritePin(LD1_PORT, LD1_PIN,
-                    (frame_tick < duty_ticks) ? HAL_GPIO_PIN_SET
-                                              : HAL_GPIO_PIN_RESET);
+  (void)HAL_TIM_OC_SetCompareUnitPulse(htim2, HAL_TIM_OC_COMPARE_UNIT_1, pulse);
 }
 ```
 
-### 5.3 主函数:启动 TIM6 更新中断
+**（3）占空比相关参数宏定义（文件顶部）**
 
 ```c
-int main(void)
-{
-  if (mx_system_init() != SYSTEM_OK)   /* CubeMX2 生成:时钟、GPIO、TIM6 初始化 */
-  {
-    return (-1);
-  }
-  else
-  {
-    /* 取 TIM6 句柄并启动更新中断。
-       TIM6 以 144 MHz / 1440 / 100 = 1 kHz 触发,
-       HAL_TIM_UpdateCallback() 在中断里驱动呼吸 PWM。 */
-    hal_tim_handle_t *htim6 = mx_tim6_gethandle();
-    if (HAL_TIM_Start_IT(htim6) != HAL_OK)
-    {
-      return (-1);
-    }
+/* T01: 启动 TIM2_CH1 PWM 输出，固定占空比约 50% */
+#define TIM2_CH1_DUTY_PULSE  50U   /* 占空比脉冲值（ARR=99，50/100 ≈ 50%） */
 
-    while (1) {}   /* 任务都在中断回调里完成,主循环保持空转 */
-  }
-}
+/* T02: 呼吸灯占空比变化参数（ARR=99，脉冲值即占空比百分比） */
+#define TIM2_DUTY_PULSE_MIN   10U   /* 最小占空比脉冲值（10%） */
+#define TIM2_DUTY_PULSE_MAX   90U   /* 最大占空比脉冲值（90%） */
+#define TIM2_BREATH_HALF_MS   1000U /* 半周期时长（由暗到亮或由亮到暗，1s） */
+#define TIM2_BREATH_CYCLE_MS  (2U * TIM2_BREATH_HALF_MS) /* 完整呼吸周期（约2s） */
 ```
+
+> **说明**：ARR 自动重载值为 99，占空比脉冲值即 `CCR` 比较值，`占空比 = CCR / (ARR+1)`。因此脉冲值 50 对应约 50% 占空比，脉冲值范围 10~90 对应 10%~90% 占空比。
 
 ## 6. HAL 依赖前提
 
-本工程使用 STM32CubeMX2 新式 HAL 驱动(CubeMX2 2.1.0),与经典 CubeMX/HAL 有几处不同,初学者请留意:
+本项目基于 STM32CubeMX2 生成的 HAL 驱动，在 `generated/hal/stm32c5xx_hal_conf.h` 中已使能对应模块：
 
-1. **弱回调覆写方式**:TIM6 的更新中断由 `HAL_TIM_IRQHandler()` 分发给**弱回调** `HAL_TIM_UpdateCallback(hal_tim_handle_t *htim)`,我们在 `main.c` 中**直接定义同名函数**即可覆写,无需额外注册。
-   - 工程配置中 `USE_HAL_TIM_REGISTER_CALLBACKS` 为 `0`,因此不使用 `HAL_TIM_RegisterUpdateCallback()`。
-2. **句柄访问**:通过 `mx_tim6_gethandle()` 取得 `hal_tim_handle_t *`,再调用 `HAL_TIM_Start_IT()` 启动更新中断。
-3. **GPIO 操作**:使用 `HAL_GPIO_WritePin(LD1_PORT, LD1_PIN, HAL_GPIO_PIN_SET/RESET)`。`LD1_PORT`/`LD1_PIN` 由 CubeMX2 在 `mx_gpio_default.h` 中自动定义为 `HAL_GPIOA` / `HAL_GPIO_PIN_5`。
-4. **时钟前提**:TIM6 使用内部时钟 144 MHz(PSIS),CubeMX 已配置 Prescaler = 1439、Period = 99,得到 1 kHz 更新频率。`mx_system_init()` 已代为完成 RCC、GPIO、NVIC、TIM6 的全部初始化。
-5. `main.h` 已通过 `mx_hal_def.h` 间接包含所用头文件,`main.c` 无需额外包含。
+| 依赖 | 说明 |
+|---|---|
+| HAL TIM 模块 | `USE_HAL_TIM_MODULE`，提供 TIM 初始化、PWM 输出、比较单元脉冲设置等接口 |
+| SysTick 时基 | 系统时基由 SysTick 驱动，`SysTick_Handler` 调用 `HAL_IncTick()`，供 `HAL_GetTick()` 提供毫秒计数，用于呼吸灯时间调度 |
+
+**初始化前提**：`main()` 中必须先调用 `mx_system_init()`（内部完成 RCC 时钟、GPIO、TIM2 等初始化）并确认返回 `SYSTEM_OK`，之后才能使用 TIM2 句柄和 PWM 相关接口。
+
+**TIM2 配置前提**（由 STM32CubeMX2 生成在 `generated/hal/mx_tim2.c`）：
+- 预分频 PSC = 1439，自动重载 ARR = 99，向上计数 → PWM 频率约 1 kHz（144 MHz /（1440 × 100））。
+- CH1 为 PWM 模式 1、高电平有效，PA5 配置为 TIM2_CH1 复用功能（AF1）。
 
 ## 7. 编译烧录步骤
 
-1. 用 STM32CubeMX2 打开工程根目录的 `TIM_PWM_1kHz.ioc2` 进行时钟/外设配置(必要时重新生成代码)。
-2. 用 **STM32CubeIDE**(或 VS Code + Cube 工具链)打开工程目录打开并编译,生成 `TIM_PWM_1kHz.elf`。
-3. 通过板载 ST-Link 的 SWD 接口将程序烧录到 MCU(STM32CubeProgrammer 或 IDE 内的烧录按钮均可)。
-4. 复位运行:观察板载 LED(LD1)呈呼吸灯效果。
+1. **打开工程**：使用 STM32CubeMX2 打开 `TIM_PWM_1kHz.ioc2`，生成并初始工程（如已配置可跳过）。
+2. **配置构建**：工程采用 CMake + Ninja 构建系统，预设为 `debug_GCC_STM32C542RCT6`（GCC 工具链）。
+3. **编译**：
+   - 在工程目录执行 CMake 配置：`cmake --preset debug_GCC_STM32C542RCT6`
+   - 构建：`cmake --build build/debug_GCC_STM32C542RCT6`
+   - 或者使用 IDE（VS Code）的 CMake 工具进行一键构建。
+4. **烧录**：将编译生成的 `.elf`/`.bin`/`.hex` 文件通过板载 ST-LINK 烧录到开发板（可用 IDE 的烧录功能或 ST-LINK 命令行工具）。
+5. **复位运行**：烧录完成后复位开发板，观察 LED 呼吸灯效果。
 
-> 若使用 VS Code + Cube CMake 预设,构建命令等价于:
->
-> ```bash
-> cube-cmake -S . -B build/debug_GCC_STM32C542RCT6
-> cube-cmake --build build/debug_GCC_STM32C542RCT6
-> ```
+> 编译、烧录与调试属于验证手段，建议按第 8 节逐项核对测试结果。
 
 ## 8. 测试结果
 
-已烧录到 NUCLEO-C542RC 运行验证:
+| 阶段 | 测试项 | 结果 |
+|---|---|---|
+| T01 | 编译烧录 | 通过，无错误 |
+| T01 | LED 状态 | LD1 半亮度稳定点亮 |
+| T01 | PA5 波形（示波器） | 约 1 kHz、约 50% 占空比的 PWM 波形 |
+| T02 | 编译烧录 | 通过，无错误 |
+| T02 | 呼吸灯效果 | LED 亮度在约 2 s 周期内由暗渐亮、由亮渐暗，往复循环，变化平滑无跳变 |
 
-- **LED 现象**:板载 LD1 呈**呼吸灯**效果,亮度由暗到亮、再逐渐变暗,循环往复,周期约 **2 s**。
-- **波形观测**:用示波器测量 PA5,观察到 **约 1 kHz** 的 PWM 脉冲,脉宽随时间呈**三角波规律**变化:脉宽逐渐变大(占空比 10% → 90%),随后逐渐变小(90% → 10%),波形正常。
-- **构建验证**:工程编译通过,烧录、运行正常。
-
-## 附:常见问题排查
-
-| 现象 | 可能原因 | 解决 |
-| --- | --- | --- |
-| LED 不亮 | TIM6 更新中断未启动 | 确认 `main()` 调用了 `HAL_TIM_Start_IT()` |
-| 无 1 kHz 波形 | 时钟/分频配置被改动 | 核对 Prescaler=1439、Period=99、SYSCLK=144 MHz |
-| LED 闪烁明显不柔和 | 载波帧过长 | 调小 `SOFT_PWM_STEPS`(如 10),提高刷新率 |
-| 呼吸速度不对 | `BREATH_PERIOD_MS` 被改动 | 恢复为 2000 ms(三角波半周期 1000 ms) |
+实验全部功能目标（PR-001、PR-002）均已实现并经硬件运行验证通过。

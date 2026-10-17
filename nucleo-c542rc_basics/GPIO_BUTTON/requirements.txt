@@ -5,4 +5,3 @@
 [Experiment Name] GPIO Button Input Experiment
 [Functional Objective] Poll the user button (PC13) in the main loop, and toggle the state of the onboard LED (PA5) on each valid press. Holding the button down does not trigger repeatedly; releasing it allows the next key press to be responded to. The debounce time is 20 ms.
 [Board and MCU] NUCLEO-C542RC development board, equipped with the STM32C542RCT6 MCU.
-
