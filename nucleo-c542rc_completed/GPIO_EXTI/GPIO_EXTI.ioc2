@@ -563,7 +563,7 @@
   "export": {
     "configurations": {
       "CMake": {
-        "outputPath": "GPIO_Button_cmake",
+        "outputPath": "",
         "toolchain": "GCC",
         "exportSource": "include-packs-from-local",
         "removeBoard": true

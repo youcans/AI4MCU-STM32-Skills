@@ -553,7 +553,7 @@
   "export": {
     "configurations": {
       "CMake": {
-        "outputPath": "GPIO_IOToggle_cmake",
+        "outputPath": "",
         "toolchain": "GCC",
         "exportSource": "include-packs-from-local",
         "removeBoard": true
@@ -953,7 +953,14 @@
     "needConfigurations": []
   },
   "pinout-excluded-pins": [],
-  "pinout-labels": [],
+  "pinout-labels": [
+    {
+      "position": "21",
+      "labels": [
+        "LD1"
+      ]
+    }
+  ],
   "pinout-gpio-assignations": [
     {
       "gpioGroupId": "default_gpio_group_id",
@@ -2226,7 +2233,7 @@ solution:
                     "speed": "LOW"
                   },
                   "label_name": [
-                    "LD2"
+                    "LD1"
                   ]
                 }
               ]
