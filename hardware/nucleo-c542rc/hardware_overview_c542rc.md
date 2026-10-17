@@ -124,7 +124,7 @@
 | PA2 | GPIO / ADC1_IN2 / LPUART1_RX / USART2_TX | 待确认 | 待确认 | ST-LINK Virtual COM TX | USART2用于Virtual COM |
 | PA3 | GPIO / ADC1_IN3 / LPUART1_TX / USART2_RX | 待确认 | 待确认 | ST-LINK Virtual COM RX | USART2用于Virtual COM |
 | PA4 | GPIO / ADC1_IN4 / DAC1_OUT1 / SPI1_NSS | 待确认 | 待确认 | 待确认 | |
-| PA5 | GPIO / ADC1_IN5 / DAC2_OUT1 / SPI1_SCK | 待确认 | 待确认 | LD1用户LED | 使用SPI1时需注意LED复用影响 |
+| PA5 | GPIO / ADC1_IN5 / DAC2_OUT1 / SPI1_SCK / TIM2_CH1 | 待确认 | 待确认 | LD1用户LED | 使用SPI1时需注意LED复用影响 |
 | PA6 | GPIO / ADC1_IN6 / SPI1_MISO / USART1_TX | 待确认 | 待确认 | 待确认 | |
 | PA7 | GPIO / ADC1_IN7 / SPI1_MOSI / USART1_RX | 待确认 | 待确认 | 待确认 | |
 | PA8 | GPIO / TIM1_CH1 | 待确认 | 待确认 | 待确认 | |
