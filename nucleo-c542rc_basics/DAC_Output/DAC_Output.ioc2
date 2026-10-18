@@ -573,7 +573,7 @@
   "export": {
     "configurations": {
       "CMake": {
-        "outputPath": "DAC_Output_cmake",
+        "outputPath": "",
         "toolchain": "GCC",
         "exportSource": "include-packs-from-local",
         "removeBoard": true

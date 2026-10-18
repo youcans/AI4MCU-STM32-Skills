@@ -568,7 +568,7 @@
   "export": {
     "configurations": {
       "CMake": {
-        "outputPath": "ADC_IT_cmake",
+        "outputPath": "",
         "toolchain": "GCC",
         "exportSource": "include-packs-from-local",
         "removeBoard": true
